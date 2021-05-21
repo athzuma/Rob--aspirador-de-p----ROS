@@ -6,34 +6,29 @@ acelera = 0.15
 freia = 0.0
 gira_direita = -0.15
 gira_esquerda = 0.15
-espiral = 0.50
+espiral = 0.50 #Essa variavel armazena a velocidade inicial de giro, que é decrementada com o passar do tempo
 ciclos = 0
-#rate = rospy.Rate(1)
+
 pub = rospy.Publisher('/cmd_vel', Twist, queue_size=1)
 def callback(msg):
-	global espiral
+	global espiral #Traz as variaveis espiral e ciclos para o contexto da funcao
 	global ciclos
 	move = Twist()
 	direita = round(msg.ranges[315],2)
 	frente = round(msg.ranges[0],2)
 	esquerda = round(msg.ranges[45],2)
-	print('===================================================================')
-	print('Esquerda --> ', esquerda, 'Frente --> ', frente, 'Direita --> ', direita)
-	print('===================================================================')
-	print('')
-	#se esquerda ou direita < 0.6, mas frente > 1, ir em frente reto
-	#se esquerda ou direita < 0.6 ou frente < 0.6, desviar
-	#se esq e dir > 0.6 e frente > 1, espiral
+	
 	
 	if ((esquerda < 0.6) or (direita < 0.6)) and (frente > 0.7):
 		#modo 2
+		#primeiro caso do modo 2, o robo deve segir em frente limpando a lateral da parede
 		move.angular.z = 0.0
 		move.linear.x = acelera
 	
 	elif ((esquerda < 0.6) or (direita < 0.6)) and (frente < 0.7):
 		#modo 2
+		#Segundo caso do modo 2, o robo deve desviar para não bater na parede
 		move.linear.x = freia
-		print('============================ DESVIANDO ============================')
 		if esquerda >= direita:
 			move.angular.z = gira_esquerda
 		else:
@@ -41,15 +36,14 @@ def callback(msg):
 	
 	else:
 		#modo 1
-		move.angular.z = espiral
+		#no modo 1, o robo anda em espiral
+		move.angular.z = espiral #Determina a velocidade da rotacao
 		move.linear.x = acelera
 		ciclos = ciclos + 1
-		if (ciclos > 8):
+		if (ciclos > 8): #A variavel ciclos determina a velocidade que o raio do espiral aumenta, quanto maior o valor, mais "profunda" e a limpeza
 			ciclos = 0
 			if (espiral > 0.02):
-				espiral = espiral - 0.01
-				print('============================ RAIO ALTERADO ============================')
-				print('Espiral --> ', espiral)
+				espiral = espiral - 0.01 #Diminui a velocidade de gira, aumentando o raio do espiral
 	
 	pub.publish(move)
 def main():
